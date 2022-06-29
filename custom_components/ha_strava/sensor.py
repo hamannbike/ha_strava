@@ -282,7 +282,7 @@ class StravaStatsSensor(Entity):
         metric = sensor_metrics[self._sensor_index]
 
         if self._sensor_index == 0:
-            return f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
+            return f"{self._data[CONF_SENSOR_TITLE]}"
 
         if metric == CONF_SENSOR_DURATION:
             days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
