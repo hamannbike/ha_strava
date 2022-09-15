@@ -62,6 +62,9 @@ class UrlCam(Camera):
     Image URLs are fetched from the strava API and the URLs come as payload of the strava data update event
     Up to 100 URLs are stored in the Camera object
     """
+    _attr_name = CONF_PHOTOS_ENTITY
+    _attr_should_poll = False
+    _attr_unique_id = CONF_PHOTOS_ENTITY
 
     def __init__(self, default_enabled=True):
         """Initialize Camera component."""
@@ -138,19 +141,6 @@ class UrlCam(Camera):
         return self._urls[list(self._urls.keys())[self._url_index]]["url"]
 
     @property
-    def unique_id(self):
-        return CONF_PHOTOS_ENTITY
-
-    @property
-    def name(self):
-        """Return the name of this camera."""
-        return CONF_PHOTOS_ENTITY
-
-    @property
-    def should_poll(self):
-        return False
-
-    @property
     def extra_state_attributes(self):
         """Return the camera state attributes."""
         if len(self._urls) == self._url_index:
@@ -160,16 +150,15 @@ class UrlCam(Camera):
     def img_update_handler(self, event):
         """handle new urls of Strava images"""
 
+        # Append new images to the urls dict, keyed by a url hash.
         for img_url in event.data["img_urls"]:
             if self.is_url_valid(url=img_url["url"]):
                 self._urls[md5(img_url["url"].encode()).hexdigest()] = {**img_url}
 
-        self._urls = {
-            k: v
-            for (k, v) in sorted(
-                list(self._urls.items()), key=lambda k_v: k_v[1]["date"]
-            )
-        }[-self._max_images :]
+        # Ensure the urls dict is sorted by date and truncated to max # images.
+        self._urls = dict(
+                [url for url in sorted(self._urls.items(), key=lambda k_v:
+                                       k_v[1]["date"])][-self._max_images :])
 
         self._pickle_urls()
         return
@@ -183,4 +172,4 @@ class UrlCam(Camera):
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
-
+        
